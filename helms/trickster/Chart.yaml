@@ -1,0 +1,15 @@
+apiVersion: v1
+appVersion: "1.1"
+description: Trickster is an HTTP Reverse Proxy Cache and time series query accelerator.
+engine: gotpl
+home: https://github.com/tricksterproxy/trickster
+icon: https://helm.tricksterproxy.io/img/trickster-horizontal.png
+maintainers:
+- name: jranson
+- name: LimitlessEarth
+- name: crandles
+name: trickster
+sources:
+- https://github.com/tricksterproxy/trickster
+tillerVersion: '>=2.8.0'
+version: 1.5.4

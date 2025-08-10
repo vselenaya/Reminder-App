@@ -1,0 +1,41 @@
+# 1. Deployment: Описание, как запускать frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        # ЗАМЕНИТЕ vselenaya НА СВОЙ DOCKER ID!
+        image: vselenaya/reminder-frontend:1.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: BACKEND_URL
+          value: "http://backend-service:8000"
+
+---
+# 2. Service: Создает ВНЕШНИЙ доступ к frontend
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  # LoadBalancer - тип сервиса, который автоматически создает
+  # облачный балансировщик нагрузки и выдает публичный IP
+  type: LoadBalancer 
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80           # Внешний порт на балансировщике (стандартный для HTTP)
+      targetPort: 8000   # Порт внутри контейнера (На какой "внутренний" порт Пода перенаправлять)

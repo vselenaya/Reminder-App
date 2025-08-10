@@ -1,0 +1,44 @@
+# 1. Deployment: Описание, как запускать backend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 1 # Начнем с одной копии (пода)
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend # Метка для сервиса и HPA
+    spec:
+      containers:
+      - name: backend
+        # ЗАМЕНИТЕ vselenaya НА СВОЙ DOCKER ID!
+        image: vselenaya/reminder-backend:1.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://myuser:mypassword@postgres-service:5432/reminders_db"
+        # Запросы и лимиты ресурсов для автомасштабирования
+        resources:
+          requests:
+            cpu: "100m" # 0.1 ядра CPU
+          limits:
+            cpu: "500m" # 0.5 ядра CPU
+
+---
+# 2. Service: Создает внутренний сетевой адрес для backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

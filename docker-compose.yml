@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Сервис базы данных PostgreSQL
+  db:
+    image: postgres:14-alpine
+    container_name: reminder_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=reminders_db
+    networks:
+      - reminder-net
+
+  # Сервис бэкенда
+  backend:
+    container_name: reminder_backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypassword@db:5432/reminders_db
+    depends_on:
+      - db
+    networks:
+      - reminder-net
+
+  # Сервис фронтенда
+  frontend:
+    container_name: reminder_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "80:8000" # Пробрасываем порт 80 хоста на 8000 контейнера
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - reminder-net
+
+networks:
+  reminder-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

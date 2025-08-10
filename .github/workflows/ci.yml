@@ -1,0 +1,68 @@
+name: Reminder App CI - Test and Build
+
+# Триггеры: когда запускать этот workflow.
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Задачи (jobs), которые нужно выполнить.
+jobs:
+  # --- ЗАДАЧА 1: ТЕСТИРОВАНИЕ ---
+  # Цель этой задачи - максимально быстро проверить корректность кода.
+  # Мы не собираем Docker-образы, а просто устанавливаем Python-зависимости
+  # и запускаем модульные тесты.
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_backend.txt
+        pip install -r requirements_frontend.txt
+        pip install pytest httpx
+
+    - name: Run tests with Pytest
+      run: pytest tests/
+
+  # --- ЗАДАЧА 2: СБОРКА DOCKER-ОБРАЗОВ ---
+  # Цель этой задачи - убедиться, что из нашего кода можно собрать
+  # готовые к развертыванию артефакты (Docker-образы).
+  # Она демонстрирует этап "Сборки" (Build).
+  build:
+    name: Build Docker Images
+    # Эта задача будет запущена только если задача 'test' завершилась успешно.
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        # Этот и следующий шаг нужны для buildx, чтобы он мог собирать
+        # образы для разных архитектур (хотя мы собираем только для одной).
+        # Это хорошая практика.
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Шаг "Сборка": мы выполняем `docker build` для каждого сервиса.
+      # Мы НЕ делаем `docker push`. Мы только проверяем, что команда сборки
+      # завершается успешно. Если Dockerfile написан с ошибкой или
+      # не хватает какого-то файла, этот шаг упадет.
+      - name: Build Backend image
+        run: docker build -t backend-test-build -f Dockerfile.backend .
+        
+      - name: Build Frontend image
+        run: docker build -t frontend-test-build -f Dockerfile.frontend .

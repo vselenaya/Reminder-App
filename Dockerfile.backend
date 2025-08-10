@@ -1,0 +1,10 @@
+# Мы говорим uvicorn: "Запусти объект 'app' из модуля 'main', который находится в папке '/app'
+FROM python:3.10-slim
+WORKDIR /app
+COPY requirements_backend.txt .
+RUN pip install -r requirements_backend.txt
+# Копируем папку backend целиком внутрь /app
+COPY ./backend /app/backend
+EXPOSE 8000
+# Запускаем, указывая полный путь "пакет.модуль:объект"
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Напоминалка</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input[type="text"], input[type="datetime-local"], input[type="date"] { /* Добавил date для фильтра */
+            width: 95%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd;
+        }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; cursor: pointer; margin-right: 5px; }
+        button:hover { background-color: #0056b3; }
+        .reminder { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9; }
+        .reminder h3 { margin-top: 0; }
+        .delete-btn { float: right; background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+        h2 { border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 30px;}
+        .filter-form button { margin-top:10px; }
+        .edit-btn { background-color: #ffc107; }
+        .edit-btn:hover { background-color: #e0a800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Мои Напоминания</h1>
+
+        <h2>Добавить напоминание</h2>
+        <form action="/reminders/" method="post">
+            <div class="form-group">
+                <label for="text">Текст:</label>
+                <input type="text" id="text" name="text" required>
+            </div>
+            <div class="form-group">
+                <label for="start_time">Начало (YYYY-MM-DDTHH:MM):</label>
+                <input type="datetime-local" id="start_time" name="start_time_str" required
+                       value="{{ default_start_time_form }}">
+            </div>
+            <div class="form-group">
+                <label for="end_time">Окончание (YYYY-MM-DDTHH:MM):</label>
+                <input type="datetime-local" id="end_time" name="end_time_str" required
+                       value="{{ default_end_time_form }}">
+            </div>
+            <button type="submit">Добавить</button>
+        </form>
+
+        <h2>Актуальные сейчас ({{ now.strftime('%d.%m.%Y %H:%M %Z') }})</h2>
+        {% if active_now_reminders %}
+            {% for reminder in active_now_reminders %}
+            <div class="reminder">
+                <h3>{{ reminder.text }}</h3>
+                <p>Период: {{ reminder.start_time.strftime('%d.%m.%Y %H:%M') }} - {{ reminder.end_time.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><small>ID: {{ reminder.id }}, Создано: {{ reminder.created_at.strftime('%d.%m.%Y %H:%M') }} </small></p>
+                
+                <!-- Кнопки управления -->
+                <div style="float: right;">
+                    <form action="/reminders/{{ reminder.id }}/edit" method="get" style="display: inline;">
+                        <button type="submit" class="edit-btn">Изменить</button>
+                    </form>
+                    <form action="/reminders/{{ reminder.id }}/delete" method="post" style="display: inline;">
+                        <button type="submit" class="delete-btn">Удалить</button>
+                    </form>
+                </div>
+                <div style="clear: both;"></div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Нет актуальных напоминаний.</p>
+        {% endif %}
+
+        <h2>Актуальные на завтра ({{ tomorrow_date.strftime('%d.%m.%Y') }})</h2>
+        {% if active_tomorrow_reminders %}
+            {% for reminder in active_tomorrow_reminders %}
+            <div class="reminder">
+                <h3>{{ reminder.text }}</h3>
+                <p>Период: {{ reminder.start_time.strftime('%d.%m.%Y %H:%M') }} - {{ reminder.end_time.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><small>ID: {{ reminder.id }}, Создано: {{ reminder.created_at.strftime('%d.%m.%Y %H:%M') }} </small></p>
+                
+                <!-- Кнопки управления -->
+                <div style="float: right;">
+                    <form action="/reminders/{{ reminder.id }}/edit" method="get" style="display: inline;">
+                        <button type="submit" class="edit-btn">Изменить</button>
+                    </form>
+                    <form action="/reminders/{{ reminder.id }}/delete" method="post" style="display: inline;">
+                        <button type="submit" class="delete-btn">Удалить</button>
+                    </form>
+                </div>
+                <div style="clear: both;"></div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Нет напоминаний на завтра.</p>
+        {% endif %}
+
+        <h2>Посмотреть напоминания</h2>
+    
+        <!-- Форма для фильтрации по диапазону -->
+        <form action="/" method="get" class="filter-form">
+            <input type="hidden" name="action" value="filter">
+            <div class="form-group">
+                <label for="filter_start_date">Показать активные с (Дата начала диапазона):</label>
+                <input type="date" id="filter_start_date" name="filter_start_date" value="{{ request.query_params.get('filter_start_date', '') }}">
+            </div>
+            <div class="form-group">
+                <label for="filter_end_date">Показать активные по (Дата конца диапазона):</label>
+                <input type="date" id="filter_end_date" name="filter_end_date" value="{{ request.query_params.get('filter_end_date', '') }}">
+            </div>
+            <button type="submit">Показать по диапазону</button>
+        </form>
+
+        <!-- Отдельная форма/кнопка для "Показать все" -->
+        <form action="/" method="get" class="filter-form" style="display: inline-block;">
+             <input type="hidden" name="action" value="show_all">
+             <button type="submit">Показать все</button>
+        </form>
+        <!-- Альтернативно, можно просто ссылкой: -->
+        <!-- <a href="/?action=show_all"><button>Показать все</button></a> -->
+
+
+        {% if filtered_reminders is defined %}
+            <h3>{% if request.query_params.get('action') == 'show_all' %}Все сохраненные напоминания{% elif request.query_params.get('filter_start_date') %}Напоминания по фильтру{% else %} {% endif %}</h3>
+            {% if filtered_reminders %}
+                {% for reminder in filtered_reminders %}
+                <div class="reminder">
+                    <h3>{{ reminder.text }}</h3>
+                    <p>Период: {{ reminder.start_time.strftime('%d.%m.%Y %H:%M') }} - {{ reminder.end_time.strftime('%d.%m.%Y %H:%M') }}</p>
+                    <p><small>ID: {{ reminder.id }}, Создано: {{ reminder.created_at.strftime('%d.%m.%Y %H:%M') }} </small></p>
+                    
+                    <!-- Кнопки управления -->
+                    <div style="float: right;">
+                        <form action="/reminders/{{ reminder.id }}/edit" method="get" style="display: inline;">
+                            <button type="submit" class="edit-btn">Изменить</button>
+                        </form>
+                        <form action="/reminders/{{ reminder.id }}/delete" method="post" style="display: inline;">
+                            <button type="submit" class="delete-btn">Удалить</button>
+                        </form>
+                    </div>
+                    <div style="clear: both;"></div>
+                </div>
+                {% endfor %}
+            {% else %}
+                 {% if request.query_params.get('action') %}
+                    <p>Нет напоминаний, соответствующих вашему запросу.</p>
+                 {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+<script>
+    // Небольшой JS для установки значений по умолчанию в форме добавления
+    // чтобы было удобнее тестировать
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const anHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+
+        // Форматируем в YYYY-MM-DDTHH:MM
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+
+        if (!startTimeInput.value) {
+            startTimeInput.value = formatDateTimeLocal(now);
+        }
+        if (!endTimeInput.value) {
+            endTimeInput.value = formatDateTimeLocal(anHourLater);
+        }
+    });
+</script>
+</body>
+</html>
+

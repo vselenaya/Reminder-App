@@ -1,0 +1,23 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa  # Имя нашего автомасштабировщика
+spec:
+  # Указываем цель для масштабирования
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-deployment # Масштабировать будем Deployment нашего бэкенда
+
+  # Задаем границы масштабирования
+  minReplicas: 1 # Минимальное количество Подов
+  maxReplicas: 5 # Максимальное количество Подов
+
+  # Описываем метрики, на которые нужно смотреть
+  metrics:
+  - type: Resource # Будем следить за потреблением ресурсов
+    resource:
+      name: cpu
+      target:
+        type: Utilization # Тип цели - средняя утилизация
+        averageUtilization: 15 # Целевой порог: 15%
