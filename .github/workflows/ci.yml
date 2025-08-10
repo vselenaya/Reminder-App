@@ -3,9 +3,9 @@ name: Reminder App CI - Test and Build
 # Триггеры: когда запускать этот workflow.
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]  # на гитхабе часто главная ветка -- main или master
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 # Задачи (jobs), которые нужно выполнить.
 jobs:
